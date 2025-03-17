@@ -3,6 +3,7 @@ import grpc
 import time
 from concurrent import futures
 import logging
+import threading
 
 # Import the generated protocol buffer code
 import crud_pb2
@@ -13,6 +14,28 @@ from database import get_db_connection, UserModel
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+
+# def background_job(session_factory):
+#     """Function that runs periodically in the background"""
+#     while True:
+#         try:
+#             # Create a new session for this job run
+#             session = session_factory()
+#             try:
+#                 # Get all users from database
+#                 users = session.query(UserModel).all()
+#                 logging.info("set properly")
+#                 logging.info(f"Current users in database: {len(users)}")
+#                 for user in users:
+#                     logging.info(f"User: {user}")
+#             finally:
+#                 # Always close the session
+#                 session.close()
+                
+#             time.sleep(10)  # Sleep for 10 seconds
+#         except Exception as e:
+#             logging.error(f"Error in background job: {str(e)}")
+#             time.sleep(10)  # Continue even if there's an error
 
 class CrudServiceServicer(crud_pb2_grpc.CrudServiceServicer):
     """Implementation of the CrudService service"""
@@ -217,16 +240,12 @@ def serve():
     # Listen on port 50051
     server.add_insecure_port('[::]:50051')
     server.start()
+    server.wait_for_termination()
     
-    logging.info("Server started on port 50051")
-    
-    try:
-        # Keep the server running until interrupted
-        while True:
-            time.sleep(86400)  # Sleep for a day
-    except KeyboardInterrupt:
-        server.stop(0)
-        logging.info("Server stopped")
+    # Start the background job in a separate thread
+    # background_thread = threading.Thread(target=lambda: background_job(session_factory), daemon=True)
+    # background_thread.start()
+    # logging.info("Background job started - will list all users every 10 seconds")
 
 if __name__ == '__main__':
     serve()
